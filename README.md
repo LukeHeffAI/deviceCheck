@@ -43,6 +43,8 @@ To run the script manually, follow these steps:
 
 This will compare your current hardware configuration against the baseline. If it's the first run, the script will create a baseline for future comparisons.
 
+Remember to add your log and device details to your ignore
+
 ### Scheduling the Script
 
 #### Unix-like Systems (MacOS/Linux):
