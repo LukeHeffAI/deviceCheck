@@ -54,8 +54,8 @@ To schedule the script to run hourly:
 ```bash
 0 * * * * /usr/bin/python /path/to/device_monitor.py
 ```
-
 Replace `/usr/bin/python` with the path to your Python executable and `/path/to/device_monitor.py` with the full path to the script.
+
 4. Save and exit the editor. The script will now run automatically every hour.
 
 #### Windows:
