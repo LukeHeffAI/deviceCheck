@@ -29,6 +29,10 @@ def get_cpu_info():
 def get_ssd_info():
     ssds = []
     for partition in psutil.disk_partitions():
+        # Skip loop devices
+        if partition.device.startswith('/dev/loop'):
+            continue
+
         if partition.fstype:
             try:
                 usage = psutil.disk_usage(partition.mountpoint)
@@ -77,12 +81,13 @@ def limit_log_file(log_file):
     with open(log_file, "w") as file:
         for line in lines:
             try:
-                # Extract and parse the date from the log entry
-                log_date = datetime.datetime.strptime(line.split(":")[0], "%Y-%m-%d %H:%M:%S")
+                # Extract the date and time from the log entry
+                log_date_str = line.split(": ", 1)[0]  # Split only on the first colon and space
+                log_date = datetime.datetime.strptime(log_date_str, "%Y-%m-%d %H:%M:%S")
                 if log_date > six_months_ago:
                     file.write(line)
             except ValueError as e:
-                # Handle any parsing errors (e.g., log line not in expected format)
+                # Handle any parsing errors
                 print(f"Error parsing date from log line: {line}. Error: {e}")
 
 def compare_and_notify(current_info, baseline_info):
@@ -95,11 +100,12 @@ def compare_and_notify(current_info, baseline_info):
                 message=message,
                 app_name="Device Monitor"
             )
-            log_change(f"{device} changed from {baseline_info[device]} to {current_info[device]}")
+            change_details = f"Change detected in {device}"
+            log_change(change_details)
             changes_detected = True
 
             # Ask user to confirm if the change is legitimate
-            response = input(f"Change detected in {device}. Is this a legitimate change? (y/n): ")
+            response = input(f"{change_details}. Is this a legitimate change? (y/n): ")
             if response.lower() == 'y':
                 baseline_info[device] = current_info[device]
 
