@@ -76,8 +76,14 @@ def limit_log_file(log_file):
 
     with open(log_file, "w") as file:
         for line in lines:
-            if datetime.datetime.strptime(line.split(":")[0], "%Y-%m-%d %H:%M:%S") > six_months_ago:
-                file.write(line)
+            try:
+                # Extract and parse the date from the log entry
+                log_date = datetime.datetime.strptime(line.split(":")[0], "%Y-%m-%d %H:%M:%S")
+                if log_date > six_months_ago:
+                    file.write(line)
+            except ValueError as e:
+                # Handle any parsing errors (e.g., log line not in expected format)
+                print(f"Error parsing date from log line: {line}. Error: {e}")
 
 def compare_and_notify(current_info, baseline_info):
     changes_detected = False
