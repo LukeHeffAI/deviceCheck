@@ -6,6 +6,7 @@ import platform
 import subprocess
 from plyer import notification
 import psutil
+import GPUtil
 
 import smtplib
 from email.message import EmailMessage
@@ -43,20 +44,18 @@ def get_ssd_info():
                 ssd = "SSD" if "SSD" in partition.opts else "HDD"
                 ssds.append({"device": partition.device, "total": usage.total, "type": ssd})
             except PermissionError:
-                # This can happen on some systems
                 continue
     return ssds
 
-# Function to get GPU info (same as before)
+# Function to get GPU info
 def get_gpu_info():
     try:
-        import GPUtil
         gpus = GPUtil.getGPUs()
-        return [gpu.name for gpu in gpus]
+        return [{"name": gpu.name, "id": gpu.id, "serial_number": gpu.serial} for gpu in gpus]  # Assuming GPUtil can provide serial numbers
     except ImportError:
         return ["GPUtil not installed"]
 
-# Function to get RAM info (same as before)
+# Function to get RAM info
 def get_ram_info():
     try:
         ram = psutil.virtual_memory()
@@ -111,6 +110,14 @@ def compare_and_notify(current_info, baseline_info):
 
     if not changes_detected:
         log_change("No changes detected in devices.")
+
+    # Ensure email is only sent once for a device change, and then reset once conflict resolved
+    if changes_detected and not os.path.exists("email_sent.flag"):
+        send_email("Device Change Alert", "Changes detected in device configuration.", ["admin@example.com", "user@example.com"])
+        open("email_sent.flag", "w").close()  # Create a flag file to indicate email has been sent
+
+    elif not changes_detected and os.path.exists("email_sent.flag"):
+        os.remove("email_sent.flag")  # Remove the flag file if no changes are detected
 
 # Function to send an email
 def send_email(subject, body, recipient_emails):
