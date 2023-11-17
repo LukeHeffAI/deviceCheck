@@ -166,6 +166,7 @@ def send_email(subject, body, recipient_emails):
         print(f"Failed to send email: {e}")
 
 def check_devices():
+    check_user_details()
     baseline_file = "device_baseline.json"
     current_info = {
         "CPU": get_cpu_info(),
