@@ -7,6 +7,9 @@ import subprocess
 from plyer import notification
 import psutil
 
+import smtplib
+from email.message import EmailMessage
+
 # Function to get CPU info
 def get_cpu_info():
     cpu_info = {
@@ -108,6 +111,25 @@ def compare_and_notify(current_info, baseline_info):
 
     if not changes_detected:
         log_change("No changes detected in devices.")
+
+# Function to send an email
+def send_email(subject, body, recipient_emails):
+    sender_email = "your_email@example.com"
+    sender_password = "your_password"
+
+    msg = EmailMessage()
+    msg.set_content(body)
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = ", ".join(recipient_emails)
+
+    try:
+        with smtplib.SMTP_SSL('smtp.example.com', 465) as smtp:  # Replace with your SMTP server details
+            smtp.login(sender_email, sender_password)
+            smtp.send_message(msg)
+        print("Email sent successfully.")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 def check_devices():
     baseline_file = "device_baseline.json"
