@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import datetime
 import platform
 import subprocess
@@ -73,8 +74,9 @@ def log_change(message):
     # Limit log file to last 6 months
     limit_log_file(log_file)
 
+# Function to crop the log file to the last 90 days
 def limit_log_file(log_file):
-    six_months_ago = datetime.datetime.now() - datetime.timedelta(days=182)
+    time_limit = datetime.datetime.now() - datetime.timedelta(days=90)
     with open(log_file, "r") as file:
         lines = file.readlines()
 
@@ -84,7 +86,7 @@ def limit_log_file(log_file):
                 # Extract the date and time from the log entry
                 log_date_str = line.split(": ", 1)[0]  # Split only on the first colon and space
                 log_date = datetime.datetime.strptime(log_date_str, "%Y-%m-%d %H:%M:%S")
-                if log_date > six_months_ago:
+                if log_date > time_limit:
                     file.write(line)
             except ValueError as e:
                 # Handle any parsing errors
@@ -104,11 +106,6 @@ def compare_and_notify(current_info, baseline_info):
             log_change(change_details)
             changes_detected = True
 
-            # Ask user to confirm if the change is legitimate
-            response = input(f"{change_details}. Is this a legitimate change? (y/n): ")
-            if response.lower() == 'y':
-                baseline_info[device] = current_info[device]
-
     if not changes_detected:
         log_change("No changes detected in devices.")
 
@@ -120,6 +117,14 @@ def check_devices():
         "GPU": get_gpu_info(),
         "RAM": get_ram_info(),
     }
+
+    reset_baseline = "--reset-baseline" in sys.argv
+
+    if reset_baseline:
+        with open(baseline_file, "w") as file:
+            json.dump(current_info, file, indent=4, sort_keys=True)
+        print("Baseline file reset with current device info.")
+        return
 
     # Check if the baseline file exists
     if not os.path.exists(baseline_file):
