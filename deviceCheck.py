@@ -19,7 +19,7 @@ def check_user_details():
 def setup_user_details():
     user_details = {}
     user_details['full_name'] = input("Enter your full name: ")
-    user_details['email'] = input("Enter your email address: ")
+    user_details['email'] = input("Enter your university email address: ")
 
     with open("user_details.json", "w") as file:
         json.dump(user_details, file, indent=4)
@@ -143,7 +143,7 @@ def compare_and_notify(current_info, baseline_info):
         os.remove("email_sent.flag")  # Remove the flag file if no changes are detected
 
 # Function to send an email
-def send_email(subject, body, recipient_emails):
+def send_email(subject, body, recipient_emails, user_details):
     sender_email = "your_email@example.com"
     sender_password = "your_password"
     user_full_name = user_details.get("full_name", "Unknown User")
