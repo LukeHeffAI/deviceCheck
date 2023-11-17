@@ -109,6 +109,36 @@ def limit_log_file(log_file):
                 # Handle any parsing errors
                 print(f"Error parsing date from log line: {line}. Error: {e}")
 
+# Function to send an email
+def send_email(subject, body, recipient_emails, user_details):
+    sender_email = "your_email@example.com"
+    sender_password = "your_password"
+    user_full_name = user_details.get("full_name", "Unknown User")
+    user_email = user_details.get("email", "no-reply@example.com")
+
+    # Enhanced email body
+    enhanced_body = (
+        f"Dear Admin Team,\n\n"
+        f"This is a notification about a change in the device configuration for {user_full_name} (Email: {user_email}).\n\n"
+        f"Details of the change:\n{body}\n\n"
+        f"Please review this change to ensure it is authorized and legitimate. If any further action is required, please follow the appropriate protocols.\n\n"
+        f"Best regards,\nDevice Monitoring System"
+    )
+
+    msg = EmailMessage()
+    msg.set_content(enhanced_body)
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = recipient_emails + [user_email]  # Add user's email to the recipient list
+
+    try:
+        with smtplib.SMTP_SSL('smtp.example.com', 465) as smtp:  # Replace with your SMTP server details
+            smtp.login(sender_email, sender_password)
+            smtp.send_message(msg)
+        print("Email sent successfully.")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
 def compare_and_notify(current_info, baseline_info):
     try:
         with open("user_details.json", "r") as file:
@@ -134,36 +164,19 @@ def compare_and_notify(current_info, baseline_info):
 
     # Ensure email is only sent once for a device change, and then reset once conflict resolved
     if changes_detected and not os.path.exists("email_sent.flag"):
+        # Prepare detailed change message
+        detailed_changes = ""
+        for device in current_info.keys():
+            if current_info[device] != baseline_info[device]:
+                detailed_changes += f"- {device} changed at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+
         send_email("Device Change Alert for " + user_details.get("full_name", "Unknown User"), 
-                   "Changes detected in device configuration.", 
-                   ["admin@example.com", "user@example.com"], 
+                   detailed_changes, 
+                   ["rachel.kontic@adelaide.edu.au", "user@example.com"],
                    user_details)
         open("email_sent.flag", "w").close()  # Create a flag file to indicate email has been sent
     elif not changes_detected and os.path.exists("email_sent.flag"):
         os.remove("email_sent.flag")  # Remove the flag file if no changes are detected
-
-# Function to send an email
-def send_email(subject, body, recipient_emails, user_details):
-    sender_email = "your_email@example.com"
-    sender_password = "your_password"
-    user_full_name = user_details.get("full_name", "Unknown User")
-    user_email = user_details.get("email", "no-reply@example.com")
-
-    body = f"User: {user_full_name}\nEmail: {user_email}\n\n{body}"
-
-    msg = EmailMessage()
-    msg.set_content(body)
-    msg['Subject'] = subject
-    msg['From'] = sender_email
-    msg['To'] = recipient_emails + [user_email]  # Add user's email to the recipient list
-
-    try:
-        with smtplib.SMTP_SSL('smtp.example.com', 465) as smtp:  # Replace with your SMTP server details
-            smtp.login(sender_email, sender_password)
-            smtp.send_message(msg)
-        print("Email sent successfully.")
-    except Exception as e:
-        print(f"Failed to send email: {e}")
 
 def check_devices():
     check_user_details()
